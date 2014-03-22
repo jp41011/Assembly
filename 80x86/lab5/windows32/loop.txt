@@ -1,0 +1,16 @@
+
+	; loop through fTemps array converting to cTemps
+		mov ecx, 4 ; loop counter
+		lea esi, fTemps
+		lea edi, cTemps
+		;jecxz quit	; quit if no numbers
+loop1:	mov eax, [esi] ;get ftemp
+		sub eax, 32
+		imul eax, 5
+		mov bl, 9
+		div bl
+		mov [edi], ax ; store back into cTemps
+		
+		add esi,4
+		add edi,4
+		loop loop1

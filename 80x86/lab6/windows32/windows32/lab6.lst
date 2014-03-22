@@ -1,0 +1,254 @@
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    03/11/14 23:38:03
+lab6.asm						     Page 1 - 1
+
+
+				; Juan Pedraza
+				; csci 126 lab6 3/5/14 - Due: 3/12/14 (next lab)
+				; This program will:
+				;	ask user's name
+				;	promt for number of scores to be recorded (1-10)
+				;	computers the total and average score
+				;	displays user's name, total score, and average score in one output window
+
+
+				.586
+				.MODEL FLAT
+
+				INCLUDE io.h
+			      C ; IO.H -- header file for I/O macros (listing suppressed)
+			      C .NOLIST      ; turn off listing
+			      C .LIST        ; begin listing
+			      C 
+
+				.STACK 4096
+
+ 00000000			.DATA
+ 00000000 00000000		scores		DWORD	?,?,?,?,?,?,?,?,?,? ;array to hold scores
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+	   00000000
+ 00000028 00000000		numScore	DWORD	? ;number of scores stored (1-10)
+ 0000002C 00000000		sumScore	DWORD	0 ;sum of the scores
+ 00000030 00000000		avgScore	DWORD	? ;average of the scores
+ 00000034 00000000		tempNum		DWORD	? ;temp num for calcs
+ 00000038 00000000		nameLen		DWORD	?
+
+
+ 0000003C  0000000B [		usrName		BYTE	11 DUP(?),0 ;store user name
+	    00
+	   ] 00
+ 00000048 52 65 73 75 6C	results		BYTE	"Results",0
+	   74 73 00
+ 00000050  000000FA [		outStr		BYTE	250 DUP(?),0 ; finall output string
+	    00
+	   ] 00
+ 0000014B  0000000B [		tempStr		BYTE	11 DUP(?),0 ;to store temp str inputs
+	    00
+	   ] 00
+ 00000157 53 74 72 69 6E	label1		BYTE	"String Length: ",0
+	   67 20 4C 65 6E
+	   67 74 68 3A 20
+	   00
+
+ 00000167 57 68 61 74 20	askName		BYTE	"What is your name: ",0 ;ask for user name
+	   69 73 20 79 6F
+	   75 72 20 6E 61
+	   6D 65 3A 20 00
+ 0000017B 48 6F 77 20 6D	askNum		BYTE	"How many scores: ",0 ;ask for number of scores
+	   61 6E 79 20 73
+	   63 6F 72 65 73
+	   3A 20 00
+ 0000018D 45 6E 74 65 72	askScore	BYTE	"Enter score: ",0 ; ask for score
+	   20 73 63 6F 72
+	   65 3A 20 00
+ 0000019B 4E 61 6D 65 3A	nameStr		BYTE	"Name: ",0 ;6 chars long
+	   20 00
+ 000001A2 53 75 6D 3A 20	sumStr		BYTE	"Sum: ",0 ;5 chars 
+	   00
+ 000001A8 41 76 65 72 61	avgStr		BYTE	"Average: ",0 ;9 chars
+	   67 65 3A 20 00
+
+ 00000000			.CODE
+ 00000000			_MainProc PROC
+
+						input askName, usrName, 11 ;ask for user name and store
+						atod askName
+						dtoa askName, eax
+					
+ 00000045			askN:	input askNum, tempStr, 11 ;ask number of scores
+						atod tempStr
+ 00000072  83 F8 01				cmp eax, 1 ;check if less than 1
+ 00000075  7C CE				jl askN
+ 00000077  83 F8 0A				cmp eax, 10 ;check if greater than 10
+ 0000007A  7F C9				jg askN
+
+ 0000007C  A3 00000028 R			mov numScore, eax ;otherwise store valid number and continue
+ 00000081  8B C8				mov ecx, eax ;prepare for loop
+ 00000083  8B 3D 00000000 R			mov edi, [scores] ;get address for scores
+ 00000089  C7 05 0000002C R			mov sumScore, 0 ;make sure starting off from 0
+	   00000000
+
+ 00000093			askS:	input askScore, tempStr, 11
+						atod tempStr
+
+ 000000C0  01 05 0000002C R			add sumScore, eax ;; add new score to current sum
+ 000000C6  89 87 00000000 R			mov scores[edi], eax ;store in array
+ 000000CC  47					inc edi ;move to next index
+ 000000CD  E2 C4				loop askS
+
+ 000000CF  A1 0000002C R			mov eax, sumScore ;start to calc average
+ 000000D4  99					cdq
+ 000000D5  8B 1D 00000028 R			mov ebx, numScore
+ 000000DB  F7 F3				div ebx
+ 000000DD  A3 00000030 R			mov avgScore, eax
+
+						;count length of usrStr
+ 000000E2  C7 05 00000038 R			mov nameLen, 0
+	   00000000
+ 000000EC  B8 00000000				mov eax, 0
+ 000000F1  8D 1D 0000003C R			lea ebx, usrName
+ 000000F7  80 3B 00		loop1:	cmp BYTE PTR [ebx], 0 ;null char
+ 000000FA  74 04				je	done1
+ 000000FC  40					inc eax
+ 000000FD  43					inc ebx
+ 000000FE  EB F7				jmp loop1
+ 00000100  A3 00000038 R	done1:	mov nameLen, eax
+
+						;combine into one output string
+ 00000105  8D 3D 00000050 R			lea edi, outStr
+ 0000010B  8D 35 0000019B R			lea esi, nameStr
+ 00000111  B9 00000006				mov ecx, 6
+ 00000116  FC					cld
+ 00000117  F3/ A4				rep movsb
+ 00000119  A1 00000038 R			mov eax, nameLen
+ 0000011E  8D 3D 00000056 R			lea edi, outStr[6];outStr+6
+ 00000124  8D 35 0000003C R			lea esi, usrName
+ 0000012A  8B C8				mov ecx, eax
+ 0000012C  FC					cld
+ 0000012D  F3/ A4				rep movsb
+						
+ 0000012F  C6 80 00000056 R			mov outStr[eax+6], 0dH
+	   0D
+
+ 00000136  8D B8 00000057 R			lea edi, outStr[eax+7] ;outStr+17+1
+ 0000013C  8D 35 000001A2 R			lea esi, sumStr
+ 00000142  B9 00000005				mov ecx, 5
+ 00000147  FC					cld
+ 00000148  F3/ A4				rep movsb
+ 0000014A  8D B8 0000005C R			lea edi, outStr[eax+7+5] ;outStr+17+6
+						dtoa tempStr, sumScore
+ 0000016C  8D 35 0000014B R			lea esi, tempStr
+ 00000172  B9 0000000B				mov ecx, 11
+ 00000177  FC					cld
+ 00000178  F3/ A4				rep movsb
+
+						;mov outStr+17+6+11, 0dH
+ 0000017A  C6 80 00000067 R			mov outStr[eax+7+5+11], 0dH
+	   0D
+
+ 00000181  8D B8 00000068 R			lea edi, outStr[eax+7+5+11+1] ;outStr+17+6+11+1
+ 00000187  8D 35 000001A8 R			lea esi, avgStr
+ 0000018D  B9 00000009				mov ecx, 9
+ 00000192  FC					cld
+ 00000193  F3/ A4				rep movsb
+ 00000195  8D B8 00000071 R			lea edi, outStr[eax+7+5+11+1+9] ;outStr+17+6+11+9
+						dtoa tempStr, avgScore
+ 000001B7  8D 35 0000014B R			lea esi, tempStr
+ 000001BD  B9 0000000B				mov ecx, 11
+ 000001C2  FC					cld
+ 000001C3  F3/ A4				rep movsb
+						;mov outStr+17+6+22+9, 0dH
+ 000001C5  C6 80 0000007C R			mov outStr[eax+7+5+11+1+9+11], 0dH
+	   0D
+
+						output results, outStr
+
+					; THE END
+ 000001E5  B8 00000000			mov eax, 0 ;clean up and ready to exit
+ 000001EA  C3				ret
+ 000001EB			_MainProc ENDP
+				END
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    03/11/14 23:38:03
+lab6.asm						     Symbols 2 - 1
+
+
+
+
+Macros:
+
+                N a m e                 Type
+
+atod . . . . . . . . . . . . . .	Proc
+atow . . . . . . . . . . . . . .	Proc
+dtoa . . . . . . . . . . . . . .	Proc
+input  . . . . . . . . . . . . .	Proc
+output . . . . . . . . . . . . .	Proc
+wtoa . . . . . . . . . . . . . .	Proc
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
+_DATA  . . . . . . . . . . . . .	32 Bit	 000001B2 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000001EB Para	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+_MainProc  . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 000001EB Public
+  askN . . . . . . . . . . . . .	L Near	 00000045 _TEXT	
+  askS . . . . . . . . . . . . .	L Near	 00000093 _TEXT	
+  loop1  . . . . . . . . . . . .	L Near	 000000F7 _TEXT	
+  done1  . . . . . . . . . . . .	L Near	 00000100 _TEXT	
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+_getInput  . . . . . . . . . . .	L Near	 00000000 FLAT	External
+_showOutput  . . . . . . . . . .	L Near	 00000000 FLAT	External
+askName  . . . . . . . . . . . .	Byte	 00000167 _DATA	
+askNum . . . . . . . . . . . . .	Byte	 0000017B _DATA	
+askScore . . . . . . . . . . . .	Byte	 0000018D _DATA	
+atodproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+atowproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+avgScore . . . . . . . . . . . .	DWord	 00000030 _DATA	
+avgStr . . . . . . . . . . . . .	Byte	 000001A8 _DATA	
+dtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+label1 . . . . . . . . . . . . .	Byte	 00000157 _DATA	
+nameLen  . . . . . . . . . . . .	DWord	 00000038 _DATA	
+nameStr  . . . . . . . . . . . .	Byte	 0000019B _DATA	
+numScore . . . . . . . . . . . .	DWord	 00000028 _DATA	
+outStr . . . . . . . . . . . . .	Byte	 00000050 _DATA	
+results  . . . . . . . . . . . .	Byte	 00000048 _DATA	
+scores . . . . . . . . . . . . .	DWord	 00000000 _DATA	
+sumScore . . . . . . . . . . . .	DWord	 0000002C _DATA	
+sumStr . . . . . . . . . . . . .	Byte	 000001A2 _DATA	
+tempNum  . . . . . . . . . . . .	DWord	 00000034 _DATA	
+tempStr  . . . . . . . . . . . .	Byte	 0000014B _DATA	
+usrName  . . . . . . . . . . . .	Byte	 0000003C _DATA	
+wtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+
+	   0 Warnings
+	   0 Errors

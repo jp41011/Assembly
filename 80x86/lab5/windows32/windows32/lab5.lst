@@ -1,0 +1,295 @@
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    02/24/14 23:45:42
+lab5.asm						     Page 1 - 1
+
+
+				; Juan Pedraza
+				; csci 126 lab5 2/19/14 - Due: 2/25/14
+				; This program ask the user for 4 Fahrenheit temperatures
+				; convert them to Celsius temperatures
+				; Finally in a single output box display all the temps and the average celsius temperature
+
+				.586
+				.MODEL FLAT
+
+				INCLUDE io.h
+			      C ; IO.H -- header file for I/O macros (listing suppressed)
+			      C .NOLIST      ; turn off listing
+			      C .LIST        ; begin listing
+			      C 
+
+				.STACK 4096
+
+ 00000000			.DATA
+ 00000000 00000000		fTemps	DWORD	?,?,?,? ;array to hold fahrenheit temperatures
+	   00000000
+	   00000000
+	   00000000
+ 00000010 00000000		cTemps	DWORD	?,?,?,?	;to hold celsius temps
+	   00000000
+	   00000000
+	   00000000
+ 00000020 00000000		avgTemp	DWORD	0
+ 00000024  000000FA [		outStr	BYTE	250 DUP(?),0 ; final output string
+	    00
+	   ] 00
+ 0000011F 46 61 68 72 65	fstring	BYTE	"Fahrenheit temp: "
+	   6E 68 65 69 74
+	   20 74 65 6D 70
+	   3A 20
+ 00000130 43 65 6C 73 69	cstring	BYTE	"Celsius temp: "
+	   75 73 20 74 65
+	   6D 70 3A 20
+ 0000013E 41 76 65 72 61	avgstr	BYTE	"Average C temp: "
+	   67 65 20 43 20
+	   74 65 6D 70 3A
+	   20
+ 0000014E 52 65 73 75 6C	results	BYTE	"Results",0
+	   74 73 00
+ 00000156 00			elem	BYTE	11 DUP(?),0	;temp string to get inputs
+ 00000162 31 20 46 61 72	f1		BYTE	"1 Farhrenheit:",0
+	   68 72 65 6E 68
+	   65 69 74 3A 00
+ 00000171 32 20 46 61 72	f2		BYTE	"2 Farhrenheit:",0
+	   68 72 65 6E 68
+	   65 69 74 3A 00
+ 00000180 33 20 46 61 72	f3		BYTE	"3 Farhrenheit:",0
+	   68 72 65 6E 68
+	   65 69 74 3A 00
+ 0000018F 34 20 46 61 72	f4		BYTE	"4 Farhrenheit:",0
+	   68 72 65 6E 68
+	   65 69 74 3A 00
+ 0000019E 31 20 43 65 6C	c1		BYTE	"1 Celsius:",0
+	   73 69 75 73 3A
+	   00
+ 000001A9 32 20 43 65 6C	c2		BYTE	"2 Celsius:",0
+	   73 69 75 73 3A
+	   00
+ 000001B4 33 20 43 65 6C	c3		BYTE	"3 Celsius:",0
+	   73 69 75 73 3A
+	   00
+ 000001BF 34 20 43 65 6C	c4		BYTE	"4 Celsius:",0
+	   73 69 75 73 3A
+	   00
+
+ 00000000			.CODE
+ 00000000			_MainProc PROC
+
+					;ask for farhrenheit values
+					input f1,elem, 11	;1st
+					atod elem
+ 0000002D  A3 00000000 R		mov fTemps+0, eax
+					input f2,elem, 11	;2nd
+					atod elem
+ 0000005F  A3 00000004 R		mov fTemps+4, eax
+					input f3,elem, 11	;3rd
+					atod elem
+ 00000091  A3 00000008 R		mov fTemps+8, eax
+					input f4,elem, 11	;4th
+					atod elem
+ 000000C3  A3 0000000C R		mov fTemps+12, eax
+
+					;convert
+ 000000C8  A1 00000000 R		mov eax, fTemps+0 ;1st
+ 000000CD  83 E8 20			sub eax, 32
+ 000000D0  6B C0 05			imul eax, 5
+ 000000D3  99				cdq
+ 000000D4  BB 00000009			mov ebx, 9
+ 000000D9  F7 F3			div ebx ; also tried idiv and it gave the same answers
+ 000000DB  A3 00000010 R		mov cTemps+0, eax
+ 000000E0  A1 00000004 R		mov eax, fTemps+4 ;2nd temp
+ 000000E5  83 E8 20			sub eax, 32
+ 000000E8  6B C0 05			imul eax, 5
+ 000000EB  99				cdq
+ 000000EC  BB 00000009			mov ebx, 9
+ 000000F1  F7 F3			div ebx
+ 000000F3  A3 00000014 R		mov cTemps+4, eax
+ 000000F8  A1 00000008 R		mov eax, fTemps+8 ;3nd temp
+ 000000FD  83 E8 20			sub eax, 32
+ 00000100  6B C0 05			imul eax, 5
+ 00000103  99				cdq
+ 00000104  BB 00000009			mov ebx, 9
+ 00000109  F7 F3			div ebx
+ 0000010B  A3 00000018 R		mov cTemps+8, eax
+ 00000110  A1 0000000C R		mov eax, fTemps+12 ;4nd temp
+ 00000115  83 E8 20			sub eax, 32
+ 00000118  6B C0 05			imul eax, 5
+ 0000011B  99				cdq
+ 0000011C  BB 00000009			mov ebx, 9
+ 00000121  F7 F3			div ebx
+ 00000123  A3 0000001C R		mov cTemps+12, eax
+					; Conversion works!!
+					;calc average temp
+ 00000128  2B C0			sub eax, eax
+ 0000012A  03 05 00000010 R		add eax, cTemps+0
+ 00000130  03 05 00000014 R		add eax, cTemps+4
+ 00000136  03 05 00000018 R		add eax, cTemps+8
+ 0000013C  03 05 0000001C R		add eax, cTemps+12
+ 00000142  99				cdq
+ 00000143  66| BB 0004			mov bx, 4
+ 00000147  66| F7 F3			div bx
+ 0000014A  A3 00000020 R		mov avgTemp, eax ; calculates average correctly !
+
+					; combine all info into one string
+ 0000014F  8D 3D 00000024 R		lea edi, outStr
+ 00000155  8D 35 0000011F R		lea esi, fstring ;fahrenheit string
+ 0000015B  FC				cld
+ 0000015C  B9 00000011			mov ecx, 17
+ 00000161  F3/ A4			rep movsb
+					;mov outStr+17, 0dH
+					
+					; add values
+ 00000163  8D 3D 00000035 R		lea edi, outStr+17
+					dtoa elem, fTemps+0
+ 00000185  8D 35 00000156 R		lea esi, elem
+ 0000018B  FC				cld
+ 0000018C  B9 0000000B			mov ecx, 11
+ 00000191  F3/ A4			rep movsb
+					;mov outStr+17+11, 20H ;1st num
+					;lea edi, outStr+17+11+1
+ 00000193  8D 3D 00000040 R		lea edi, outStr+17+11
+					dtoa elem, fTemps+4
+ 000001B5  8D 35 00000156 R		lea esi, elem
+ 000001BB  FC				cld
+ 000001BC  B9 0000000B			mov ecx, 11
+ 000001C1  F3/ A4			rep movsb
+					;mov outStr+17+22+1, 20H ; space after 2nd number
+					;lea edi, outStr+17+22+2
+ 000001C3  8D 3D 0000004B R		lea edi, outStr+17+22
+					dtoa elem, fTemps+8
+ 000001E5  8D 35 00000156 R		lea esi, elem
+ 000001EB  FC				cld
+ 000001EC  B9 0000000B			mov ecx, 11
+ 000001F1  F3/ A4			rep movsb
+					;mov outStr+17+33+2+1, 20H ; 3rd # space
+ 000001F3  8D 3D 00000056 R		lea edi, outStr+17+33
+					dtoa elem, fTemps+12
+ 00000215  8D 35 00000156 R		lea esi, elem
+ 0000021B  FC				cld
+ 0000021C  B9 0000000B			mov ecx, 11
+ 00000221  F3/ A4			rep movsb	
+ 00000223  C6 05 00000061 R		mov outStr+17+44, 0dH ; new line
+	   0D
+ 0000022A  8D 3D 00000062 R		lea edi, outStr+18+44
+ 00000230  8D 35 00000130 R		lea esi, cstring
+ 00000236  FC				cld
+ 00000237  B9 0000000E			mov ecx, 14
+ 0000023C  F3/ A4			rep movsb
+ 0000023E  8D 3D 00000070 R		lea edi, outStr+18+44+14
+					dtoa elem, cTemps+0
+ 00000260  8D 35 00000156 R		lea esi, elem
+ 00000266  FC				cld
+ 00000267  B9 0000000B			mov ecx, 11
+ 0000026C  F3/ A4			rep movsb ; 1st celsius
+ 0000026E  8D 3D 0000007B R		lea edi, outStr+18+55+14
+					dtoa elem, cTemps+4
+ 00000290  8D 35 00000156 R		lea esi, elem
+ 00000296  FC				cld
+ 00000297  B9 0000000B			mov ecx, 11
+ 0000029C  F3/ A4			rep movsb ;2nd celsius
+ 0000029E  8D 3D 00000086 R		lea edi, outStr+18+66+14
+					dtoa elem, cTemps+8
+ 000002C0  8D 35 00000156 R		lea esi, elem
+ 000002C6  FC				cld
+ 000002C7  B9 0000000B			mov ecx, 11
+ 000002CC  F3/ A4			rep movsb ;3rd celcius
+ 000002CE  8D 3D 00000091 R		lea edi, outStr+18+77+14
+					dtoa elem, cTemps+12
+ 000002F0  8D 35 00000156 R		lea esi, elem
+ 000002F6  FC				cld
+ 000002F7  B9 0000000B			mov ecx, 11
+ 000002FC  F3/ A4			rep movsb ;4th celcius
+ 000002FE  C6 05 0000009C R		mov outStr+18+88+14, 0dH ; new line
+	   0D
+ 00000305  8D 3D 0000009D R		lea edi, outStr+19+88+14
+ 0000030B  8D 35 0000013E R		lea esi, avgstr
+ 00000311  FC				cld
+ 00000312  B9 00000010			mov ecx, 16
+ 00000317  F3/ A4			rep movsb ;average string	
+ 00000319  8D 3D 000000AD R		lea edi, outStr+19+88+14+16
+					dtoa elem, avgTemp
+ 0000033B  8D 35 00000156 R		lea esi, elem
+ 00000341  FC				cld
+ 00000342  B9 0000000B			mov ecx, 11
+ 00000347  F3/ A4			rep movsb ;celsius average
+
+					output results, outStr ;output results
+
+					; THE END
+ 00000362  B8 00000000			mov eax, 0 ;clean up and ready to exit
+ 00000367  C3				ret
+ 00000368			_MainProc ENDP
+				END
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    02/24/14 23:45:42
+lab5.asm						     Symbols 2 - 1
+
+
+
+
+Macros:
+
+                N a m e                 Type
+
+atod . . . . . . . . . . . . . .	Proc
+atow . . . . . . . . . . . . . .	Proc
+dtoa . . . . . . . . . . . . . .	Proc
+input  . . . . . . . . . . . . .	Proc
+output . . . . . . . . . . . . .	Proc
+wtoa . . . . . . . . . . . . . .	Proc
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
+_DATA  . . . . . . . . . . . . .	32 Bit	 000001CA Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000368 Para	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+_MainProc  . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000368 Public
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+_getInput  . . . . . . . . . . .	L Near	 00000000 FLAT	External
+_showOutput  . . . . . . . . . .	L Near	 00000000 FLAT	External
+atodproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+atowproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+avgTemp  . . . . . . . . . . . .	DWord	 00000020 _DATA	
+avgstr . . . . . . . . . . . . .	Byte	 0000013E _DATA	
+c1 . . . . . . . . . . . . . . .	Byte	 0000019E _DATA	
+c2 . . . . . . . . . . . . . . .	Byte	 000001A9 _DATA	
+c3 . . . . . . . . . . . . . . .	Byte	 000001B4 _DATA	
+c4 . . . . . . . . . . . . . . .	Byte	 000001BF _DATA	
+cTemps . . . . . . . . . . . . .	DWord	 00000010 _DATA	
+cstring  . . . . . . . . . . . .	Byte	 00000130 _DATA	
+dtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+elem . . . . . . . . . . . . . .	Byte	 00000156 _DATA	
+f1 . . . . . . . . . . . . . . .	Byte	 00000162 _DATA	
+f2 . . . . . . . . . . . . . . .	Byte	 00000171 _DATA	
+f3 . . . . . . . . . . . . . . .	Byte	 00000180 _DATA	
+f4 . . . . . . . . . . . . . . .	Byte	 0000018F _DATA	
+fTemps . . . . . . . . . . . . .	DWord	 00000000 _DATA	
+fstring  . . . . . . . . . . . .	Byte	 0000011F _DATA	
+outStr . . . . . . . . . . . . .	Byte	 00000024 _DATA	
+results  . . . . . . . . . . . .	Byte	 0000014E _DATA	
+wtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+
+	   0 Warnings
+	   0 Errors

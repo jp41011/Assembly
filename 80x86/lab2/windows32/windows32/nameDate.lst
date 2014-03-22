@@ -1,0 +1,120 @@
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    01/29/14 13:44:53
+nameDate.asm						     Page 1 - 1
+
+
+				; Juan Pedraza
+				; csci 126 lab2
+				; get name and date and print out
+
+				.586
+				.MODEL FLAT
+
+				INCLUDE io.h
+			      C ; IO.H -- header file for I/O macros (listing suppressed)
+			      C .NOLIST      ; turn off listing
+			      C .LIST        ; begin listing
+			      C 
+
+				.STACK 4096
+
+ 00000000			.DATA
+ 00000000  00000028 [		name0	BYTE	40 DUP (?)	;to store name
+	    00
+	   ]
+ 00000028 00000000		name1	DWORD	?
+ 0000002C  00000004 [		name2	BYTE	4 DUP (?)	; same as name1?
+	    00
+	   ]
+ 00000030  0000000A [		date	BYTE	10 DUP (?)	; to store date mm/dd/yyyy
+	    00
+	   ]
+ 0000003A 59 6F 75 72 20	string	BYTE	"Your Name & Date",0 ; the comma and 0 is an ending character
+	   4E 61 6D 65 20
+	   26 20 44 61 74
+	   65 00
+ 0000004B 45 6E 74 65 72	askName	BYTE	"Enter your name:",0
+	   20 79 6F 75 72
+	   20 6E 61 6D 65
+	   3A 00
+ 0000005C 57 68 61 74 20	askDate BYTE	"What is the date:",0
+	   69 73 20 74 68
+	   65 20 64 61 74
+	   65 3A 00
+
+ 00000000			.CODE
+ 00000000			_MainProc PROC
+					input askName, name0, 40	; Double word is 4 bytes
+
+					input askDate, date, 10
+
+					output string, name0
+					output string, date
+
+ 0000006E  B8 00000000			mov eax, 0 ;clean up and ready to exit
+ 00000073  C3				ret
+ 00000074			_MainProc ENDP
+				END
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    01/29/14 13:44:53
+nameDate.asm						     Symbols 2 - 1
+
+
+
+
+Macros:
+
+                N a m e                 Type
+
+atod . . . . . . . . . . . . . .	Proc
+atow . . . . . . . . . . . . . .	Proc
+dtoa . . . . . . . . . . . . . .	Proc
+input  . . . . . . . . . . . . .	Proc
+output . . . . . . . . . . . . .	Proc
+wtoa . . . . . . . . . . . . . .	Proc
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
+_DATA  . . . . . . . . . . . . .	32 Bit	 0000006E Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000074 Para	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+_MainProc  . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000074 Public
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+_getInput  . . . . . . . . . . .	L Near	 00000000 FLAT	External
+_showOutput  . . . . . . . . . .	L Near	 00000000 FLAT	External
+askDate  . . . . . . . . . . . .	Byte	 0000005C _DATA	
+askName  . . . . . . . . . . . .	Byte	 0000004B _DATA	
+atodproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+atowproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+date . . . . . . . . . . . . . .	Byte	 00000030 _DATA	
+dtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+name0  . . . . . . . . . . . . .	Byte	 00000000 _DATA	
+name1  . . . . . . . . . . . . .	DWord	 00000028 _DATA	
+name2  . . . . . . . . . . . . .	Byte	 0000002C _DATA	
+string . . . . . . . . . . . . .	Byte	 0000003A _DATA	
+wtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+
+	   0 Warnings
+	   0 Errors
