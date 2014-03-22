@@ -1,0 +1,358 @@
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    03/19/14 21:18:14
+lab8.asm						     Page 1 - 1
+
+
+				; Juan Pedraza
+				; CSCI 112 - Lab 8
+				; Takes 10 scores (separated by spaces) from the user
+				; uses a function call to calculate the average score
+				; and a 2nd function call to calculate the max score
+				; then prints out the results in a single output box
+
+				.586
+				.MODEL FLAT
+				INCLUDE io.h
+			      C ; IO.H -- header file for I/O macros (listing suppressed)
+			      C .NOLIST      ; turn off listing
+			      C .LIST        ; begin listing
+			      C 
+				.STACK 4096
+
+ 00000000			.DATA
+ 00000000  0000000A [		scoreArray	DWORD	10 DUP(?) ;array to store scores
+	    00000000
+	   ]
+ 00000028 00000000		avgScore	DWORD	0
+ 0000002C 00000000		maxScore	DWORD	0
+ 00000030 00000000		count1		DWORD	?
+
+
+ 00000034 45 6E 74 65 72	prompt1		BYTE	"Enter ten scores (separated by spaces): ",0
+	   20 74 65 6E 20
+	   73 63 6F 72 65
+	   73 20 28 73 65
+	   70 61 72 61 74
+	   65 64 20 62 79
+	   20 73 70 61 63
+	   65 73 29 3A 20
+	   00
+ 0000005D 53 63 6F 72 65	out1		BYTE	"Scores: ",0 ;8char
+	   73 3A 20 00
+ 00000066 41 76 65 72 61	out2		BYTE	"Average: ",0 ;9char
+	   67 65 3A 20 00
+ 00000070 4D 61 78 69 6D	out3		BYTE	"Maximum: ",0 ;9char
+	   75 6D 3A 20 00
+ 0000007A 52 65 73 75 6C	results		BYTE	"Results:",0
+	   74 73 3A 00
+ 00000083  000000FA [		finalStr	BYTE	250 DUP(?),0 ;final output string
+	    00
+	   ] 00
+ 0000017E  0000000B [		temp		BYTE	11 DUP(?),0
+	    00
+	   ] 00
+ 0000018A  0000000B [		tempx		BYTE	11 DUP(" "),0
+	    20
+	   ] 00
+
+
+ 00000196  00000028 [		scoreString	BYTE	40 DUP(?),0 ;store input string of scores
+	    00
+	   ] 00
+
+ 00000000			.CODE
+ 00000000			_MainProc PROC
+
+							input prompt1, scoreString, 40	;get the 10 scores
+ 0000001E  8D 1D 00000196 R				lea ebx, scoreString			;get address of string
+ 00000024  FF 05 00000030 R	outerLoop: inc count1 ;outer loop counter
+ 0000002A  8D 35 0000018A R				lea esi, tempx ;flush temp string before using
+ 00000030  8D 3D 0000017E R				lea edi, temp
+ 00000036  FC						cld
+ 00000037  B9 0000000B					mov ecx, 11
+ 0000003C  F3/ A4					rep movsb
+
+ 0000003E  8D 15 0000017E R				lea edx, temp
+ 00000044  80 3B 20		innerLoop: cmp BYTE PTR[ebx], 20H ;if ending mark(space)
+ 00000047  74 08					je done1 ;exit
+ 00000049  8A 03					mov AL, BYTE PTR[ebx] ;else get 1 byte from input string
+ 0000004B  88 02					mov [edx], AL ;move to temp
+
+ 0000004D  43						inc ebx ;to next byte in input string
+ 0000004E  42						inc edx ;to next byte in temp string
+ 0000004F  EB F3					jmp innerLoop
+
+ 00000051			done1:
+							atod temp ;eax <- temp
+ 00000060  8B 0D 00000030 R				mov ecx, count1
+ 00000066  49						dec ecx ;counter:1->array index:0
+ 00000067  6B C9 04					imul ecx, 4 ;array element size = 4 bytes
+ 0000006A  89 81 00000000 R				mov scoreArray[ecx], eax ;store one score in array
+
+ 00000070  43						inc ebx ;skip space char
+ 00000071  83 3D 00000030 R				cmp count1, 10 ;loop 10 times
+	   0A
+ 00000078  7C AA					jnge outerLoop
+				;call functions
+							;mov eax, 10
+							;push eax ;onto stack as the 2nd arugment
+ 0000007A  6A 0A					pushd 10
+ 0000007C  8D 05 00000000 R				lea eax, scoreArray
+ 00000082  50						push eax ;onto stack as the 1st argument
+ 00000083  E8 000002C7					call average
+ 00000088  A3 00000028 R				mov avgScore, eax ;return value in eax
+ 0000008D  83 C4 08					add esp, 8 ;pushed 2 4-byte values onto stack
+							
+							;call maximum
+ 00000090  6A 0A					pushd 10 ;push number of elements onto stack
+ 00000092  8D 05 00000000 R				lea eax, scoreArray
+ 00000098  50						push eax ;push address of array onto stack
+ 00000099  E8 000002D8					call maximum
+ 0000009E  A3 0000002C R				mov maxScore, eax
+ 000000A3  83 C4 08					add esp, 8
+
+				;create output string
+ 000000A6  8D 35 0000005D R				lea esi, out1
+ 000000AC  8D 3D 00000083 R				lea edi, finalStr
+ 000000B2  B9 00000008					mov ecx, 8
+ 000000B7  FC						cld
+ 000000B8  F3/ A4					rep movsb
+ 000000BA  8D 3D 0000008B R				lea edi, finalStr[8]
+							dtoa temp, scoreArray[0] ;1st
+ 000000DC  8D 35 0000017E R				lea esi, temp
+ 000000E2  B9 0000000B					mov ecx, 11
+ 000000E7  FC						cld
+ 000000E8  F3/ A4					rep movsb
+ 000000EA  8D 3D 00000096 R				lea edi, finalStr[8+11]
+							dtoa temp, scoreArray[4] ;2nd
+ 0000010C  8D 35 0000017E R				lea esi, temp
+ 00000112  B9 0000000B					mov ecx, 11
+ 00000117  FC						cld
+ 00000118  F3/ A4					rep movsb
+ 0000011A  8D 3D 000000A1 R				lea edi, finalStr[8+22]
+							dtoa temp, scoreArray[8] ;3nd
+ 0000013C  8D 35 0000017E R				lea esi, temp
+ 00000142  B9 0000000B					mov ecx, 11
+ 00000147  FC						cld
+ 00000148  F3/ A4					rep movsb
+ 0000014A  8D 3D 000000AC R				lea edi, finalStr[8+33]
+							dtoa temp, scoreArray[12] ;4nd
+ 0000016C  8D 35 0000017E R				lea esi, temp
+ 00000172  B9 0000000B					mov ecx, 11
+ 00000177  FC						cld
+ 00000178  F3/ A4					rep movsb
+ 0000017A  8D 3D 000000B7 R				lea edi, finalStr[8+44]
+							dtoa temp, scoreArray[16] ;5nd
+ 0000019C  8D 35 0000017E R				lea esi, temp
+ 000001A2  B9 0000000B					mov ecx, 11
+ 000001A7  FC						cld
+ 000001A8  F3/ A4					rep movsb
+ 000001AA  8D 3D 000000C2 R				lea edi, finalStr[8+55]
+							dtoa temp, scoreArray[20] ;6nd
+ 000001CC  8D 35 0000017E R				lea esi, temp
+ 000001D2  B9 0000000B					mov ecx, 11
+ 000001D7  FC						cld
+ 000001D8  F3/ A4					rep movsb
+ 000001DA  8D 3D 000000CD R				lea edi, finalStr[8+66]
+							dtoa temp, scoreArray[24] ;7nd
+ 000001FC  8D 35 0000017E R				lea esi, temp
+ 00000202  B9 0000000B					mov ecx, 11
+ 00000207  FC						cld
+ 00000208  F3/ A4					rep movsb
+ 0000020A  8D 3D 000000D8 R				lea edi, finalStr[8+77]
+							dtoa temp, scoreArray[28] ;8nd
+ 0000022C  8D 35 0000017E R				lea esi, temp
+ 00000232  B9 0000000B					mov ecx, 11
+ 00000237  FC						cld
+ 00000238  F3/ A4					rep movsb
+ 0000023A  8D 3D 000000E3 R				lea edi, finalStr[8+88]
+							dtoa temp, scoreArray[32] ;9nd
+ 0000025C  8D 35 0000017E R				lea esi, temp
+ 00000262  B9 0000000B					mov ecx, 11
+ 00000267  FC						cld
+ 00000268  F3/ A4					rep movsb
+ 0000026A  8D 3D 000000EE R				lea edi, finalStr[8+99]
+							dtoa temp, scoreArray[36] ;10nd
+ 0000028C  8D 35 0000017E R				lea esi, temp
+ 00000292  B9 0000000B					mov ecx, 11
+ 00000297  FC						cld
+ 00000298  F3/ A4					rep movsb
+ 0000029A  C6 05 000000F9 R				mov finalStr[8+110], 0dH ;newline
+	   0D
+ 000002A1  8D 3D 000000FA R				lea edi, finalStr[8+111] ;next line title average
+ 000002A7  8D 35 00000066 R				lea esi, out2
+ 000002AD  B9 00000009					mov ecx, 9
+ 000002B2  FC						cld
+ 000002B3  F3/ A4					rep movsb
+ 000002B5  8D 3D 00000103 R				lea edi, finalStr[8+111+9] ;put average value
+							dtoa temp, avgScore
+ 000002D7  8D 35 0000017E R				lea esi, temp
+ 000002DD  B9 0000000B					mov ecx, 11
+ 000002E2  FC						cld
+ 000002E3  F3/ A4					rep movsb
+ 000002E5  C6 05 0000010E R				mov finalStr[8+111+9+11], 0dH ;newline
+	   0D
+ 000002EC  8D 3D 0000010F R				lea edi, finalStr[17+122+1] ;put title max
+ 000002F2  8D 35 00000070 R				lea esi, out3
+ 000002F8  B9 00000009					mov ecx, 9
+ 000002FD  FC						cld
+ 000002FE  F3/ A4					rep movsb
+ 00000300  8D 3D 00000118 R				lea edi, finalStr[27+122] ;put max value
+							dtoa temp, maxScore
+ 00000322  8D 35 0000017E R				lea esi, temp
+ 00000328  B9 0000000B					mov ecx, 11
+ 0000032D  FC						cld
+ 0000032E  F3/ A4					rep movsb
+
+							output results, finalStr
+
+ 00000349  B8 00000000					mov     eax, 0
+ 0000034E  C3						ret
+ 0000034F			_MainProc ENDP
+
+				;average PROC takes in a reference to an array and a count of elements
+				;go through array adding elements to current sum
+				;divide total sum by number of elements count
+				;and return sum as eax
+ 0000034F			average PROC
+ 0000034F  55						push ebp		;save base pointer
+ 00000350  8B EC					mov ebp, esp	;establish stack frame
+							;push eax	;save registers. will use as temp
+ 00000352  53						push ebx	;will use a sum
+ 00000353  51						push ecx	;loop counter
+ 00000354  52						push edx	;number of elements
+ 00000355  56						push esi	;pointer to array
+
+ 00000356  8B 75 08					mov esi, [ebp+8] ;get address of array
+ 00000359  8B 4D 0C					mov ecx, [ebp+12] ;get count. count=10
+ 0000035C  8B D1					mov edx, ecx ;store count
+ 0000035E  2B DB					sub ebx, ebx ;reset sum
+ 00000360  8B 06		loopSum:	mov eax, [esi] ;get number
+ 00000362  03 D8					add ebx, eax ;add to current sum
+ 00000364  83 C6 04					add esi, 4 ;next element
+ 00000367  E2 F7					loop loopSum
+							;out of loop
+ 00000369  8B CA					mov ecx, edx ;reset ecx to the original count
+ 0000036B  8B C3					mov eax, ebx ;prepare for division
+ 0000036D  99						cdq
+ 0000036E  F7 F9					idiv ecx
+							;average in eax //average is calc correctly
+							;exit code restore register to before func call
+ 00000370  5E						pop esi
+ 00000371  5A						pop edx
+ 00000372  59						pop ecx
+ 00000373  5B						pop ebx
+ 00000374  5D						pop ebp
+ 00000375  C3						ret
+ 00000376			average ENDP
+
+				;maximum PROC takes in a reference to the begining of an array and a count of elements
+				;calculate max. set temp max equal to 1st element
+				; go through rest of array comparing elements to the current max
+				; update current max if needed. return max in eax and restore stack 
+ 00000376			maximum PROC
+ 00000376  55						push ebp
+ 00000377  8B EC					mov ebp, esp
+
+							;push ebx ; current max //save registers
+ 00000379  51						push ecx ;loop counter
+							;push edx ;store count
+ 0000037A  56						push esi ;address of array
+
+ 0000037B  8B 75 08					mov esi, [ebp+8] ;get address of array
+ 0000037E  8B 4D 0C					mov ecx, [ebp+12] ;get count
+
+ 00000381  8B 06					mov eax, [esi] ;set as initial max
+ 00000383  41						inc ecx ;start at 2nd element
+ 00000384  83 C6 04					add esi, 4
+ 00000387  39 06		loopMax:	cmp [esi], eax ;array element > max ?
+ 00000389  7E 02					jng endIf1 ;jump if not greater than
+ 0000038B  8B 06					mov eax, [esi] ;update new max
+ 0000038D  83 C6 04		endIf1:		add esi, 4
+ 00000390  E2 F5					loop loopMax
+							;max in eax //exit loop clean up before returning
+ 00000392  5E						pop esi
+ 00000393  59						pop ecx
+ 00000394  5D						pop ebp
+ 00000395  C3						ret
+ 00000396			maximum ENDP
+
+				END
+
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    03/19/14 21:18:14
+lab8.asm						     Symbols 2 - 1
+
+
+
+
+Macros:
+
+                N a m e                 Type
+
+atod . . . . . . . . . . . . . .	Proc
+atow . . . . . . . . . . . . . .	Proc
+dtoa . . . . . . . . . . . . . .	Proc
+input  . . . . . . . . . . . . .	Proc
+output . . . . . . . . . . . . .	Proc
+wtoa . . . . . . . . . . . . . .	Proc
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
+_DATA  . . . . . . . . . . . . .	32 Bit	 000001BF Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000396 Para	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+_MainProc  . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 0000034F Public
+  outerLoop  . . . . . . . . . .	L Near	 00000024 _TEXT	
+  innerLoop  . . . . . . . . . .	L Near	 00000044 _TEXT	
+  done1  . . . . . . . . . . . .	L Near	 00000051 _TEXT	
+average  . . . . . . . . . . . .	P Near	 0000034F _TEXT	Length= 00000027 Public
+  loopSum  . . . . . . . . . . .	L Near	 00000360 _TEXT	
+maximum  . . . . . . . . . . . .	P Near	 00000376 _TEXT	Length= 00000020 Public
+  loopMax  . . . . . . . . . . .	L Near	 00000387 _TEXT	
+  endIf1 . . . . . . . . . . . .	L Near	 0000038D _TEXT	
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+_getInput  . . . . . . . . . . .	L Near	 00000000 FLAT	External
+_showOutput  . . . . . . . . . .	L Near	 00000000 FLAT	External
+atodproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+atowproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+avgScore . . . . . . . . . . . .	DWord	 00000028 _DATA	
+count1 . . . . . . . . . . . . .	DWord	 00000030 _DATA	
+dtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+finalStr . . . . . . . . . . . .	Byte	 00000083 _DATA	
+maxScore . . . . . . . . . . . .	DWord	 0000002C _DATA	
+out1 . . . . . . . . . . . . . .	Byte	 0000005D _DATA	
+out2 . . . . . . . . . . . . . .	Byte	 00000066 _DATA	
+out3 . . . . . . . . . . . . . .	Byte	 00000070 _DATA	
+prompt1  . . . . . . . . . . . .	Byte	 00000034 _DATA	
+results  . . . . . . . . . . . .	Byte	 0000007A _DATA	
+scoreArray . . . . . . . . . . .	DWord	 00000000 _DATA	
+scoreString  . . . . . . . . . .	Byte	 00000196 _DATA	
+tempx  . . . . . . . . . . . . .	Byte	 0000018A _DATA	
+temp . . . . . . . . . . . . . .	Byte	 0000017E _DATA	
+wtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+
+	   0 Warnings
+	   0 Errors
