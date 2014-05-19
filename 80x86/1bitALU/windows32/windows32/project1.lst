@@ -1,0 +1,434 @@
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    04/09/14 20:34:18
+project1.asm						     Page 1 - 1
+
+
+				; Juan Pedraza
+				; CSCI 112 – ProjectPhase1
+				;Program will simulate a 1 bit ALU
+				;Will as for 4 inputs Ai, Bi, Ci, Op
+				; Will display inputs along with results Si, Co
+				; Op= 00->AND , 01->OR, 10->ADD
+
+				.586
+				.MODEL FLAT
+				INCLUDE io.h
+			      C ; IO.H -- header file for I/O macros (listing suppressed)
+			      C .NOLIST      ; turn off listing
+			      C .LIST        ; begin listing
+			      C 
+				.STACK 4096
+
+ 00000000			.DATA
+
+
+
+ 00000000 45 6E 74 65 72	askInput	BYTE	"Enter ai, bi, ci, op. (space separated)",0
+	   20 61 69 2C 20
+	   62 69 2C 20 63
+	   69 2C 20 6F 70
+	   2E 20 28 73 70
+	   61 63 65 20 73
+	   65 70 61 72 61
+	   74 65 64 29 00
+ 00000028  0000000B [		inputStr	BYTE	11 DUP(?),0
+	    00
+	   ] 00
+
+ 00000034  00000004 [		inputArr	DWORD	4 DUP(0)	;array to store value of inputs
+	    00000000
+	   ]
+ 00000044 00000000		varSi		DWORD	0
+ 00000048 00000000		varCo		DWORD	0
+ 0000004C 00000000		count1		DWORD	0
+
+ 00000050 52 65 73 75 6C	results		BYTE	"Results:",0
+	   74 73 3A 00
+ 00000059 20 20 20 20 20	finalTitle	BYTE	"          Ai         Bi         Ci         Op       Si       Co",0	;63 char
+	   20 20 20 20 20
+	   41 69 20 20 20
+	   20 20 20 20 20
+	   20 42 69 20 20
+	   20 20 20 20 20
+	   20 20 43 69 20
+	   20 20 20 20 20
+	   20 20 20 4F 70
+	   20 20 20 20 20
+	   20 20 53 69 20
+	   20 20 20 20 20
+	   20 43 6F 00
+ 00000099  000000F0 [		finalStr	BYTE	240 DUP(?),0
+	    00
+	   ] 00
+
+ 0000018A  0000000B [		temp		BYTE	11 DUP(?),0
+	    00
+	   ] 00
+ 00000196  0000000B [		tempx		BYTE	11 DUP(" "),0
+	    20
+	   ] 00
+
+ 00000000			.CODE
+ 00000000			_MainProc PROC
+
+							input askInput, inputStr, 11
+ 0000001E  8D 1D 00000028 R				lea ebx, inputStr ;get address of inputStr
+ 00000024  FF 05 0000004C R	outerLoop:	inc count1 ;increase loop counter
+ 0000002A  8D 35 00000196 R				lea esi, tempx ;flush temp str before using
+ 00000030  8D 3D 0000018A R				lea edi, temp
+ 00000036  FC						cld
+ 00000037  B9 0000000B					mov ecx, 11
+ 0000003C  F3/ A4					rep movsb
+
+ 0000003E  8D 15 0000018A R				lea edx, temp
+ 00000044  80 3B 20		innerLoop:	cmp BYTE PTR[ebx], 20H	;if ending mark (space)
+ 00000047  74 08					je done1
+ 00000049  8A 03					mov AL, BYTE PTR[ebx]	;otherwise get 1 byte from input string
+ 0000004B  88 02					mov [edx], AL	;move to temp
+
+ 0000004D  43						inc ebx			;next byte in input string
+ 0000004E  42						inc edx			;next byte in tmp string
+ 0000004F  EB F3					jmp innerLoop
+
+ 00000051			done1:		atod temp
+ 00000060  8B 0D 0000004C R				mov ecx, count1
+ 00000066  49						dec ecx			;index starts at 0
+ 00000067  6B C9 04					imul ecx, 4		;array element size = 4 bytes
+ 0000006A  89 81 00000034 R				mov inputArr[ecx], eax	;store one value in array
+
+ 00000070  43						inc ebx	;skip space char
+ 00000071  83 3D 0000004C R				cmp count1, 4	;loop 4 times for each input value
+	   04
+ 00000078  7C AA					jnge outerLoop
+
+						;call ALU with arguments
+							;push inputArr[12]	;Op
+							;push inputArr[8]	;Ci
+							;push inputArr[4]	;Bi
+							;push inputArr[0]	;Ai
+							;call ALUfunc
+							;add esp, 16
+							
+ 0000007A  8D 05 00000034 R				lea eax, inputArr ;send array
+ 00000080  50						push eax
+ 00000081  E8 00000162					call ALUfunc
+ 00000086  83 C4 04					add esp, 4
+							
+ 00000089  A3 00000044 R				mov varSi, eax	;eax has the Si output of the ALU function
+ 0000008E  89 1D 00000048 R				mov varCo, ebx	;ebx has the Co output of the ALU function (carry out)
+
+						;generate final string
+ 00000094  8D 35 00000059 R				lea esi, finalTitle
+ 0000009A  8D 3D 00000099 R				lea edi, finalStr
+ 000000A0  B9 0000003F					mov ecx, 63
+ 000000A5  FC						cld
+ 000000A6  F3/ A4					rep movsb
+ 000000A8  C6 05 000000D8 R				mov finalStr[63], 0dH	;newline
+	   0D
+ 000000AF  8D 3D 000000D9 R				lea edi, finalStr[64]
+							dtoa temp, inputArr[0] ;get first value (Ai)
+ 000000D1  8D 35 0000018A R				lea esi, temp
+ 000000D7  B9 0000000B					mov ecx, 11
+ 000000DC  FC						cld
+ 000000DD  F3/ A4					rep movsb
+ 000000DF  8D 3D 000000E4 R				lea edi, finalStr[64+11]
+							dtoa temp, inputArr[4] ;get 2nd value (Bi)
+ 00000101  8D 35 0000018A R				lea esi, temp
+ 00000107  B9 0000000B					mov ecx, 11
+ 0000010C  FC						cld
+ 0000010D  F3/ A4					rep movsb
+ 0000010F  8D 3D 000000EF R				lea edi, finalStr[64+22]
+							dtoa temp, inputArr[8] ;get 3rd value (Ci)
+ 00000131  8D 35 0000018A R				lea esi, temp
+ 00000137  B9 0000000B					mov ecx, 11
+ 0000013C  FC						cld
+ 0000013D  F3/ A4					rep movsb
+ 0000013F  8D 3D 000000FA R				lea edi, finalStr[64+33]
+							dtoa temp, inputArr[12]	;get 4th value (Op)
+ 00000161  8D 35 0000018A R				lea esi, temp
+ 00000167  B9 0000000B					mov ecx, 11
+ 0000016C  FC						cld
+ 0000016D  F3/ A4					rep movsb
+ 0000016F  8D 3D 00000105 R				lea edi, finalStr[64+44]
+							dtoa temp, varSi
+ 00000191  8D 35 0000018A R				lea esi, temp
+ 00000197  B9 0000000B					mov ecx, 11
+ 0000019C  FC						cld
+ 0000019D  F3/ A4					rep movsb
+ 0000019F  8D 3D 00000110 R				lea edi, finalStr[64+55]
+							dtoa temp, varCo
+ 000001C1  8D 35 0000018A R				lea esi, temp
+ 000001C7  B9 0000000B					mov ecx, 11
+ 000001CC  F3/ A4					rep movsb
+
+							output results, finalStr
+
+
+
+ 000001E7  C3						ret
+ 000001E8			_MainProc ENDP
+
+				; ALU Function calls AND (00), OR (01), Add (10) functions
+				; function takes in a reference to an array
+				; ALUfunc(array[])
+				; function returns Si in eax register and Co in ebx register
+ 000001E8			ALUfunc PROC
+ 000001E8  55						push ebp	;save base pointer
+ 000001E9  8B EC					mov ebp, esp	;establish stack frame
+ 000001EB  51						push ecx
+ 000001EC  52						push edx
+ 000001ED  56						push esi
+
+ 000001EE  8B 75 08					mov esi, DWORD PTR [ebp+8] ;get reference to array
+							
+							;call ANDfunc
+ 000001F1  8B 0E					mov ecx, [esi]
+ 000001F3  51						push ecx
+ 000001F4  83 C6 04					add esi, 4
+ 000001F7  8B 16					mov edx, [esi]
+ 000001F9  52						push edx
+ 000001FA  83 EE 04					sub esi, 4 ;reset array index back to begining
+ 000001FD  E8 0000003E					call ANDfunc
+ 00000202  83 C4 08					add esp, 8 ;results from ANDfunc in eax
+
+							;call ORfunc
+ 00000205  51						push ecx ;Ai
+ 00000206  52						push edx ;Bi
+ 00000207  E8 00000054					call ORfunc	;result stored in ebx
+ 0000020C  83 C4 08					add esp, 8
+
+							;call ADDfunc
+ 0000020F  51						push ecx	;Ai
+ 00000210  52						push edx	;Bi
+ 00000211  83 C6 08					add esi, 8 ;move array index to Ci
+ 00000214  8B 16					mov edx, [esi]
+ 00000216  52						push edx	;Ci
+ 00000217  83 EE 08					sub esi, 8 ;reset index of array
+ 0000021A  E8 00000061					call ADDfunc ;sum in ecx and Co in edx
+ 0000021F  83 C4 0C					add esp, 12
+							;after first 3 calls AND->eax, OR->ebx, ADD-> ecx & edx
+
+							;call MUXfunc(Op code, AND , OR, Si, Co, Ci)
+ 00000222  83 C6 08					add esi, 8
+ 00000225  FF 36					pushd DWORD PTR [esi] ;push Ci
+ 00000227  83 EE 08					sub esi, 8 ;reset array index
+ 0000022A  52						push edx	;push Co 
+ 0000022B  51						push ecx	;push Si
+ 0000022C  53						push ebx	;OR result
+ 0000022D  50						push eax	;AND result
+ 0000022E  83 C6 0C					add esi, 12 ;move to op
+ 00000231  FF 36					pushd DWORD PTR [esi] ;push Op code onto stack
+ 00000233  E8 0000009D					call MUXfunc ;results Si in eax, Co -> ebx
+ 00000238  83 C4 18					add esp, 24
+							
+ 0000023B  5E						pop esi
+ 0000023C  5A						pop edx
+ 0000023D  59						pop ecx
+ 0000023E  5D						pop ebp
+ 0000023F  C3						ret
+ 00000240			ALUfunc ENDP
+
+				; AND function
+				; takes 2 values as inputs Ai and Bi result is stored in eax
+ 00000240			ANDfunc PROC
+ 00000240  55						push ebp
+ 00000241  8B EC					mov ebp, esp
+							
+ 00000243  53						push ebx
+ 00000244  8B 45 08					mov eax, [ebp+8]
+ 00000247  8B 5D 0C					mov ebx, [ebp+12]
+ 0000024A  03 C3					add eax, ebx
+ 0000024C  83 F8 02					cmp eax, 2
+ 0000024F  75 07					jne false1
+ 00000251  B8 00000001		true1:		mov eax, 1 ;set to true
+ 00000256  EB 05					jmp exit1
+ 00000258  B8 00000000		false1:		mov eax, 0 ;set to false
+ 0000025D			exit1:
+ 0000025D  5B						pop ebx
+ 0000025E  5D						pop ebp
+ 0000025F  C3						ret
+ 00000260			ANDfunc ENDP
+
+				; OR function
+				; Takes 2 values as inputs Ai and Bi result stored in ebx
+ 00000260			ORfunc PROC
+ 00000260  55						push ebp
+ 00000261  8B EC					mov ebp, esp
+
+ 00000263  50						push eax
+
+ 00000264  8B 45 08					mov eax, [ebp+8]
+ 00000267  8B 5D 0C					mov ebx, [ebp+12]
+ 0000026A  03 D8					add ebx, eax
+ 0000026C  83 FB 01					cmp ebx, 1
+ 0000026F  7C 07					jl false2
+ 00000271  BB 00000001		true2:		mov ebx, 1 ;true only one is 
+ 00000276  EB 05					jmp exit2
+ 00000278  BB 00000000		false2:		mov ebx, 0 ;set to false
+ 0000027D			exit2:		
+ 0000027D  58						pop eax
+ 0000027E  5D						pop ebp
+ 0000027F  C3						ret
+ 00000280			ORfunc ENDP
+
+				; Add function
+				; Takes in 3 inputs Ai, Bi, Ci results Si->ecx , Co->edx
+ 00000280			ADDfunc PROC
+ 00000280  55						push ebp
+ 00000281  8B EC					mov ebp, esp
+
+ 00000283  50						push eax
+ 00000284  53						push ebx
+
+ 00000285  8B 45 08					mov eax, [ebp+8]	;Ci
+ 00000288  8B 5D 0C					mov ebx, [ebp+12]	;Bi
+ 0000028B  8B 4D 10					mov ecx, [ebp+16]	;Ai
+
+ 0000028E  03 CB					add ecx, ebx
+ 00000290  03 C8					add ecx, eax
+ 00000292  83 F9 03					cmp ecx, 3
+ 00000295  74 16					je three1
+ 00000297  83 F9 02					cmp ecx, 2
+ 0000029A  74 1D					je two1
+ 0000029C  83 F9 01					cmp ecx, 1
+ 0000029F  74 24					je one1
+							;must be 0
+ 000002A1  B9 00000000					mov ecx, 0
+ 000002A6  BA 00000000					mov edx, 0
+ 000002AB  EB 24					jmp exit3
+ 000002AD  B9 00000001		three1:		mov ecx, 1
+ 000002B2  BA 00000001					mov edx, 1
+ 000002B7  EB 18					jmp exit3
+ 000002B9  B9 00000000		two1:		mov ecx, 0
+ 000002BE  BA 00000001					mov edx, 1
+ 000002C3  EB 0C					jmp exit3
+ 000002C5  B9 00000001		one1:		mov ecx, 1
+ 000002CA  BA 00000000					mov edx, 0
+ 000002CF  EB 00					jmp exit3
+ 000002D1			exit3:
+ 000002D1  5B						pop ebx
+ 000002D2  58						pop eax
+ 000002D3  5D						pop ebp
+ 000002D4  C3						ret
+ 000002D5			ADDfunc ENDP
+
+				; Multiplexer function
+				;MUXfunc(Op code, AND , OR, Si, Co, Ci)
+				;oupts are Si->eax and Co->ebx
+ 000002D5			MUXfunc PROC
+ 000002D5  55						push ebp
+ 000002D6  8B EC					mov ebp, esp
+
+ 000002D8  51						push ecx
+
+ 000002D9  8B 4D 08					mov ecx, [ebp+8] ;get op code
+ 000002DC  83 F9 0A					cmp ecx, 10		;check if ADD op code
+ 000002DF  75 08					jne check2
+ 000002E1  8B 45 14					mov eax, [ebp+20]
+ 000002E4  8B 5D 18					mov ebx, [ebp+24]
+ 000002E7  EB 1A					jmp exit4
+ 000002E9  83 F9 01		check2:		cmp ecx, 1		;check if OR op code
+ 000002EC  75 08					jne check3
+ 000002EE  8B 45 10					mov eax, [ebp+16]
+ 000002F1  8B 5D 1C					mov ebx, [ebp+28]
+ 000002F4  EB 0D					jmp exit4
+ 000002F6  83 F9 00		check3:		cmp ecx, 0	;don't need to check since it is the last option
+ 000002F9  75 08					jne exit4   ;incase i need to change later
+ 000002FB  8B 45 0C					mov eax, [ebp+12]
+ 000002FE  8B 5D 1C					mov ebx, [ebp+28]
+ 00000301  EB 00					jmp exit4
+ 00000303			exit4:		
+ 00000303  59						pop ecx
+ 00000304  5D						pop ebp
+ 00000305  C3						ret
+ 00000306			MUXfunc ENDP
+
+				END
+Microsoft (R) Macro Assembler Version 11.00.61030.0	    04/09/14 20:34:18
+project1.asm						     Symbols 2 - 1
+
+
+
+
+Macros:
+
+                N a m e                 Type
+
+atod . . . . . . . . . . . . . .	Proc
+atow . . . . . . . . . . . . . .	Proc
+dtoa . . . . . . . . . . . . . .	Proc
+input  . . . . . . . . . . . . .	Proc
+output . . . . . . . . . . . . .	Proc
+wtoa . . . . . . . . . . . . . .	Proc
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
+_DATA  . . . . . . . . . . . . .	32 Bit	 000001A2 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000306 Para	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+ADDfunc  . . . . . . . . . . . .	P Near	 00000280 _TEXT	Length= 00000055 Public
+  three1 . . . . . . . . . . . .	L Near	 000002AD _TEXT	
+  two1 . . . . . . . . . . . . .	L Near	 000002B9 _TEXT	
+  one1 . . . . . . . . . . . . .	L Near	 000002C5 _TEXT	
+  exit3  . . . . . . . . . . . .	L Near	 000002D1 _TEXT	
+ALUfunc  . . . . . . . . . . . .	P Near	 000001E8 _TEXT	Length= 00000058 Public
+ANDfunc  . . . . . . . . . . . .	P Near	 00000240 _TEXT	Length= 00000020 Public
+  true1  . . . . . . . . . . . .	L Near	 00000251 _TEXT	
+  false1 . . . . . . . . . . . .	L Near	 00000258 _TEXT	
+  exit1  . . . . . . . . . . . .	L Near	 0000025D _TEXT	
+MUXfunc  . . . . . . . . . . . .	P Near	 000002D5 _TEXT	Length= 00000031 Public
+  check2 . . . . . . . . . . . .	L Near	 000002E9 _TEXT	
+  check3 . . . . . . . . . . . .	L Near	 000002F6 _TEXT	
+  exit4  . . . . . . . . . . . .	L Near	 00000303 _TEXT	
+ORfunc . . . . . . . . . . . . .	P Near	 00000260 _TEXT	Length= 00000020 Public
+  true2  . . . . . . . . . . . .	L Near	 00000271 _TEXT	
+  false2 . . . . . . . . . . . .	L Near	 00000278 _TEXT	
+  exit2  . . . . . . . . . . . .	L Near	 0000027D _TEXT	
+_MainProc  . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 000001E8 Public
+  outerLoop  . . . . . . . . . .	L Near	 00000024 _TEXT	
+  innerLoop  . . . . . . . . . .	L Near	 00000044 _TEXT	
+  done1  . . . . . . . . . . . .	L Near	 00000051 _TEXT	
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+_getInput  . . . . . . . . . . .	L Near	 00000000 FLAT	External
+_showOutput  . . . . . . . . . .	L Near	 00000000 FLAT	External
+askInput . . . . . . . . . . . .	Byte	 00000000 _DATA	
+atodproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+atowproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+count1 . . . . . . . . . . . . .	DWord	 0000004C _DATA	
+dtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+finalStr . . . . . . . . . . . .	Byte	 00000099 _DATA	
+finalTitle . . . . . . . . . . .	Byte	 00000059 _DATA	
+inputArr . . . . . . . . . . . .	DWord	 00000034 _DATA	
+inputStr . . . . . . . . . . . .	Byte	 00000028 _DATA	
+results  . . . . . . . . . . . .	Byte	 00000050 _DATA	
+tempx  . . . . . . . . . . . . .	Byte	 00000196 _DATA	
+temp . . . . . . . . . . . . . .	Byte	 0000018A _DATA	
+varCo  . . . . . . . . . . . . .	DWord	 00000048 _DATA	
+varSi  . . . . . . . . . . . . .	DWord	 00000044 _DATA	
+wtoaproc . . . . . . . . . . . .	L Near	 00000000 FLAT	External
+
+	   0 Warnings
+	   0 Errors
